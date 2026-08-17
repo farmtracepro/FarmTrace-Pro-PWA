@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#123c5c">
+
+  <title>FarmTrace Pro</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+</head>
+
+<body style="margin:0; padding:0;">
+
+  <iframe
+    src="https://script.google.com/macros/s/AKfycbxiyRYpE95iGT-C-shvcM43JRQ1-hp1o_8L3gabyUOQ8zyWN1Dmu5dZvWmR5aIIwJk6/exec"
+    style="width:100%; height:100vh; border:0;"
+    allow="geolocation; camera">
+  </iframe>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+          .catch(error => console.error("Service Worker error:", error));
+      });
+    }
+  </script>
+
+</body>
+</html>
