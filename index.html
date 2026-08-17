@@ -1,31 +1,2015 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#123c5c">
-
-  <title>FarmTrace Pro</title>
-
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <link rel="manifest" href="./manifest.webmanifest">
+  <style>
+    body{
+      font-family:Arial,sans-serif;
+      background:#f4f7f5;
+      margin:0;
+      color:#1f2937;
+    }
+
+    .wrap{
+      max-width:820px;
+      margin:auto;
+      padding:16px;
+    }
+
+    .card{
+      background:#fff;
+      padding:20px;
+      margin:14px 0;
+      border-radius:14px;
+      box-shadow:0 2px 10px #0001;
+    }
+
+    h1,h2{color:#176b3a}
+    h1{margin:0 0 4px}
+    h2{
+      font-size:18px;
+      border-bottom:1px solid #ddd;
+      padding-bottom:8px;
+    }
+
+    .subtitle{
+      font-size:15px;
+      color:#667085;
+      margin-bottom:14px;
+    }
+
+    label{
+      display:block;
+      font-weight:600;
+      margin:12px 0 5px;
+    }
+
+    input,select,textarea{
+      box-sizing:border-box;
+      width:100%;
+      padding:11px;
+      border:1px solid #bbb;
+      border-radius:8px;
+      font-size:16px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    button{
+      border:0;
+      border-radius:9px;
+      padding:12px 16px;
+      font-weight:700;
+      background:#176b3a;
+      color:#fff;
+      cursor:pointer;
+    }
+
+    .secondary{
+      background:#e8f3ec;
+      color:#176b3a;
+    }
+
+    .danger{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    .required{color:#c00}
+
+    .checks label{
+      font-weight:400;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .checks input{width:auto}
+
+    .hidden{display:none}
+
+    .statusbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .badge{
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:700;
+    }
+
+    .online{
+      background:#dcfce7;
+      color:#166534;
+    }
+
+    .offline{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    .pending{
+      background:#fef3c7;
+      color:#92400e;
+    }
+
+    #gpsStatus,#saveStatus{
+      margin-top:10px;
+      padding:10px;
+      background:#eef7f1;
+      border-radius:8px;
+    }
+
+    .pending-card{
+      border:1px solid #ddd;
+      border-radius:10px;
+      padding:12px;
+      margin:8px 0;
+      background:#fafafa;
+    }
+
+    .small{
+      font-size:13px;
+      color:#666;
+    }
+
+    @media(max-width:650px){
+      .grid{grid-template-columns:1fr}
+      .wrap{padding:10px}
+    }
+  </style>
 </head>
 
-<body style="margin:0; padding:0;">
+<body>
 
-  <iframe
-    src="https://script.google.com/macros/s/AKfycbxiyRYpE95iGT-C-shvcM43JRQ1-hp1o_8L3gabyUOQ8zyWN1Dmu5dZvWmR5aIIwJk6/exec"
-    style="width:100%; height:100vh; border:0;"
-    allow="geolocation; camera">
-  </iframe>
+<div class="wrap">
 
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js")
-          .catch(error => console.error("Service Worker error:", error));
-      });
+  <div class="actions" style="justify-content:flex-end">
+    <button class="secondary" type="button" onclick="setLang('ms')">BM</button>
+    <button class="secondary" type="button" onclick="setLang('en')">English</button>
+  </div>
+
+  <div class="card">
+    <h1 id="productName">FarmTrace Pro</h1>
+    <div class="subtitle">
+      Smallholder Verification & Traceability Platform
+    </div>
+
+    <div class="statusbar">
+      <span id="netBadge" class="badge">...</span>
+      <span id="pendingBadge" class="badge pending">Pending: 0</span>
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="secondary"
+        onclick="syncAll()"
+        data-ms="🔄 Sync Pending Records"
+        data-en="🔄 Sync Pending Records">
+      </button>
+
+      <button
+        type="button"
+        class="secondary"
+        onclick="showPending()"
+        data-ms="📋 Lihat Pending"
+        data-en="📋 View Pending">
+      </button>
+    </div>
+
+    <div
+      class="small"
+      data-ms="Rekod disimpan dahulu dalam telefon. Bila online, sistem akan cuba sync ke Google Sheets & Drive."
+      data-en="Records are saved to the phone first. When online, the system will attempt to sync to Google Sheets & Drive.">
+    </div>
+  </div>
+
+
+  <form id="farmForm">
+
+    <div class="card">
+      <h2
+        data-ms="1. Maklumat Pusat Timbang"
+        data-en="1. Weighing Centre Information">
+      </h2>
+<label
+  data-ms="Client / Syarikat"
+  data-en="Client / Company">
+</label>
+
+<select id="clientSelect" onchange="loadCentresByClient()">
+  <option value="">-- Pilih Client / Select Client --</option>
+</select>
+      <label
+        data-ms="Nama Pusat Timbang"
+        data-en="Weighing Centre Name">
+      </label>
+
+      <select id="weighingCentre">
+        <option value="">-- Pilih / Select --</option>
+      </select>
+    </div>
+
+
+    <div class="card">
+
+      <h2
+        data-ms="2. Maklumat Pekebun"
+        data-en="2. Smallholder Information">
+      </h2>
+
+      <label>
+        <span
+          data-ms="Nama Pekebun"
+          data-en="Smallholder Name">
+        </span>
+
+        <span class="required">*</span>
+      </label>
+
+      <input id="farmerName" required>
+
+      <div class="grid">
+
+        <div>
+          <label
+            data-ms="No. Telefon"
+            data-en="Phone No.">
+          </label>
+
+          <input id="phone">
+        </div>
+
+        <div>
+          <label
+            data-ms="No. Lesen MPOB"
+            data-en="MPOB Licence No.">
+          </label>
+
+          <input id="mpob">
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2
+        data-ms="3. Maklumat Kebun"
+        data-en="3. Farm Information">
+      </h2>
+
+      <label>
+        <span
+          data-ms="Keluasan"
+          data-en="Farm Area">
+        </span>
+
+        <span class="required">*</span>
+      </label>
+
+      <input id="farmArea" required>
+
+      <div class="grid">
+
+        <div>
+          <label
+            data-ms="Jenis Tanaman"
+            data-en="Crop Type">
+          </label>
+
+          <input id="cropType">
+        </div>
+
+        <div>
+          <label
+            data-ms="Tahun Tanaman"
+            data-en="Planting Year">
+          </label>
+
+          <input id="plantingYear">
+        </div>
+
+        <div>
+          <label
+            data-ms="Bilangan Kitaran Tanaman"
+            data-en="Planting Cycle">
+          </label>
+
+          <input id="plantingCycle">
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2
+        data-ms="4. Lokasi"
+        data-en="4. Location">
+      </h2>
+
+      <div class="grid">
+
+        <div>
+          <label>Latitude</label>
+          <input id="latitude" readonly>
+        </div>
+
+        <div>
+          <label>Longitude</label>
+          <input id="longitude" readonly>
+        </div>
+
+        <div>
+          <label>GPS Accuracy</label>
+          <input id="gpsAccuracy" readonly>
+        </div>
+
+        <div>
+          <label>Google Maps</label>
+          <input id="mapPreview" readonly>
+        </div>
+
+      </div>
+
+      <div class="actions">
+
+        <button
+          type="button"
+          onclick="getGPS()"
+          data-ms="📍 Ambil Lokasi GPS"
+          data-en="📍 Get GPS Location">
+        </button>
+
+        <button
+          type="button"
+          class="secondary"
+          onclick="openMap()"
+          data-ms="🗺️ Buka Peta"
+          data-en="🗺️ Open Map">
+        </button>
+
+      </div>
+
+      <div id="gpsStatus"></div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2
+        data-ms="5. Kawasan Sensitif"
+        data-en="5. Sensitive Area">
+      </h2>
+
+      <div class="checks">
+
+        <label>
+          <input
+            type="checkbox"
+            name="sensitive"
+            value="Hutan Simpan">
+
+          <span
+            data-ms="Hutan Simpan"
+            data-en="Forest Reserve">
+          </span>
+        </label>
+
+
+        <label>
+          <input
+            type="checkbox"
+            name="sensitive"
+            value="Gambut">
+
+          <span
+            data-ms="Gambut"
+            data-en="Peat">
+          </span>
+        </label>
+
+
+        <label>
+          <input
+            type="checkbox"
+            name="sensitive"
+            value="Zon Penampan">
+
+          <span
+            data-ms="Zon Penampan"
+            data-en="Buffer Zone">
+          </span>
+        </label>
+
+
+        <label>
+          <input
+            type="checkbox"
+            name="sensitive"
+            value="HCV">
+
+          HCV
+        </label>
+
+
+        <label>
+          <input
+            type="checkbox"
+            name="sensitive"
+            value="Koridor Hidupan Liar">
+
+          <span
+            data-ms="Koridor Hidupan Liar"
+            data-en="Wildlife Corridor">
+          </span>
+        </label>
+
+
+        <label>
+
+          <input
+            id="otherCheck"
+            type="checkbox"
+            name="sensitive"
+            value="Lain-lain"
+            onchange="toggleOther()">
+
+          <span
+            data-ms="Lain-lain"
+            data-en="Others">
+          </span>
+
+        </label>
+
+      </div>
+
+
+      <div
+        id="otherBox"
+        class="hidden">
+
+        <label
+          data-ms="Nyatakan"
+          data-en="Please specify">
+        </label>
+
+        <input id="sensitiveOther">
+
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2
+        data-ms="6. Gambar (Maksimum 4)"
+        data-en="6. Photos (Maximum 4)">
+      </h2>
+
+      <input
+        id="photos"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple
+        onchange="photoChanged()">
+
+      <div
+        id="photoCount"
+        class="small">
+        0 / 4
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2
+        data-ms="7. Pengesahan"
+        data-en="7. Verification">
+      </h2>
+
+      <label
+        data-ms="Nama Pegawai"
+        data-en="Officer Name">
+      </label>
+
+      <input id="officerName">
+
+
+      <label>Status</label>
+
+      <select id="status">
+
+        <option value=""></option>
+
+        <option>
+          Verified
+        </option>
+
+        <option>
+          Pending
+        </option>
+
+        <option>
+          Requires Follow-up
+        </option>
+
+        <option>
+          Rejected
+        </option>
+
+      </select>
+
+
+      <label
+        data-ms="Catatan"
+        data-en="Notes">
+      </label>
+
+      <textarea
+        id="notes"
+        rows="3">
+      </textarea>
+
+
+      <div class="actions">
+
+        <button
+          type="submit"
+          data-ms="💾 Simpan Rekod"
+          data-en="💾 Save Record">
+        </button>
+
+
+        <button
+          type="button"
+          class="secondary"
+          onclick="newRecord()"
+          data-ms="➕ Rekod Baru"
+          data-en="➕ New Record">
+        </button>
+
+      </div>
+
+
+      <div id="saveStatus"></div>
+
+    </div>
+
+  </form>
+
+
+  <div
+    id="pendingSection"
+    class="card hidden">
+
+    <h2
+      data-ms="Rekod Pending Dalam Telefon"
+      data-en="Pending Records on Phone">
+    </h2>
+
+    <div id="pendingList"></div>
+
+  </div>
+
+</div>
+
+
+<script>
+// FarmTrace Pro GitHub Pages configuration.
+// Leave API_URL empty when this page is served directly by Google Apps Script.
+// For GitHub Pages, set API_URL to the deployed Apps Script Web App /exec URL.
+const API_URL = '';
+const RUNNING_IN_APPS_SCRIPT = typeof google !== 'undefined' && google.script && google.script.run;
+
+function apiUrl(action, params={}){
+  if(!API_URL) throw new Error('API_URL belum ditetapkan untuk GitHub Pages.');
+  const u = new URL(API_URL);
+  u.searchParams.set('api', action);
+  Object.entries(params).forEach(([k,v])=>{
+    if(v !== undefined && v !== null && v !== '') u.searchParams.set(k, v);
+  });
+  return u.toString();
+}
+
+async function apiGet(action, params={}){
+  const res = await fetch(apiUrl(action, params), {
+    method:'GET',
+    headers:{'Accept':'application/json'}
+  });
+  if(!res.ok) throw new Error('API GET gagal: HTTP ' + res.status);
+  const data = await res.json();
+  if(data && data.ok === false) throw new Error(data.error || 'API request failed');
+  return (data && Object.prototype.hasOwnProperty.call(data, 'data')) ? data.data : data;
+}
+
+async function apiPost(payload){
+  if(!API_URL) throw new Error('API_URL belum ditetapkan untuk GitHub Pages.');
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8','Accept':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error('API POST gagal: HTTP ' + res.status);
+  const data = await res.json();
+  if(!data || data.ok !== true) throw new Error((data && data.error) || 'Server tidak mengesahkan rekod.');
+  return data;
+}
+
+
+let lang='ms';
+
+let selectedFiles=[];
+
+const $=id=>document.getElementById(id);
+
+const DB_NAME='FarmTraceProDemoV1';
+
+const STORE='pending_records';
+
+
+function openDB(){
+
+  return new Promise((resolve,reject)=>{
+
+    const req=indexedDB.open(DB_NAME,1);
+
+
+    req.onupgradeneeded=e=>{
+
+      const d=e.target.result;
+
+      if(!d.objectStoreNames.contains(STORE)){
+
+        d.createObjectStore(
+          STORE,
+          {keyPath:'syncId'}
+        );
+
+      }
+
+    };
+
+
+    req.onsuccess=e=>{
+
+      const d=e.target.result;
+
+      d.onversionchange=()=>{
+
+        try{
+
+          d.close();
+
+        }catch(_){}
+
+      };
+
+      resolve(d);
+
+    };
+
+
+    req.onerror=e=>
+
+      reject(
+        e.target.error ||
+        new Error('IndexedDB open failed')
+      );
+
+  });
+
+}
+
+
+async function dbPut(record){
+
+  const d=await openDB();
+
+  return new Promise((resolve,reject)=>{
+
+    let tx;
+
+    try{
+
+      tx=d.transaction(
+        STORE,
+        'readwrite'
+      );
+
+      tx.objectStore(STORE)
+        .put(record);
+
+    }catch(err){
+
+      try{
+        d.close();
+      }catch(_){}
+
+      reject(err);
+
+      return;
     }
-  </script>
+
+
+    tx.oncomplete=()=>{
+
+      try{
+        d.close();
+      }catch(_){}
+
+      resolve();
+
+    };
+
+
+    tx.onerror=()=>{
+
+      const err=
+        tx.error ||
+        new Error('Offline save failed');
+
+      try{
+        d.close();
+      }catch(_){}
+
+      reject(err);
+
+    };
+
+  });
+
+}
+
+
+async function dbGetAll(){
+
+  const d=await openDB();
+
+  return new Promise((resolve,reject)=>{
+
+    let tx,req;
+
+    try{
+
+      tx=d.transaction(
+        STORE,
+        'readonly'
+      );
+
+      req=
+        tx.objectStore(STORE)
+        .getAll();
+
+    }catch(err){
+
+      try{
+        d.close();
+      }catch(_){}
+
+      reject(err);
+
+      return;
+
+    }
+
+
+    req.onsuccess=()=>{
+
+      resolve(
+        req.result || []
+      );
+
+    };
+
+
+    req.onerror=()=>{
+
+      reject(
+        req.error ||
+        new Error(
+          'Cannot read offline records'
+        )
+      );
+
+    };
+
+
+    tx.oncomplete=()=>{
+
+      try{
+        d.close();
+      }catch(_){}
+
+    };
+
+  });
+
+}
+
+
+async function dbDelete(id){
+
+  const d=await openDB();
+
+  return new Promise((resolve,reject)=>{
+
+    let tx;
+
+    try{
+
+      tx=d.transaction(
+        STORE,
+        'readwrite'
+      );
+
+      tx.objectStore(STORE)
+        .delete(id);
+
+    }catch(err){
+
+      try{
+        d.close();
+      }catch(_){}
+
+      reject(err);
+
+      return;
+
+    }
+
+
+    tx.oncomplete=()=>{
+
+      try{
+        d.close();
+      }catch(_){}
+
+      resolve();
+
+    };
+
+
+    tx.onerror=()=>{
+
+      const err=
+        tx.error ||
+        new Error(
+          'Cannot delete offline record'
+        );
+
+      try{
+        d.close();
+      }catch(_){}
+
+      reject(err);
+
+    };
+
+  });
+
+}
+
+
+document.addEventListener(
+  'DOMContentLoaded',
+  async()=>{
+
+    setLang('ms');
+
+    updateNetwork();
+
+
+    window.addEventListener(
+      'online',
+      ()=>{
+
+        updateNetwork();
+
+        syncAll();
+
+      }
+    );
+
+
+    window.addEventListener(
+      'offline',
+      updateNetwork
+    );
+
+
+    loadActiveClients().catch(err => {
+      console.error('Client load error:', err);
+      $('saveStatus').textContent = '⚠️ ' + (err.message || err);
+    });
+
+
+    try{
+
+      await updatePendingCount();
+
+    }catch(err){
+
+      $('pendingBadge')
+        .textContent=
+        'Offline Storage Error';
+
+    }
+
+  }
+);
+
+function loadActiveClients(){
+  if(RUNNING_IN_APPS_SCRIPT){
+    return new Promise((resolve,reject)=>{
+      google.script.run
+        .withSuccessHandler(clients=>{
+          populateClients(clients || []);
+          resolve(clients || []);
+        })
+        .withFailureHandler(reject)
+        .getActiveClients();
+    });
+  }
+  return apiGet('getActiveClients').then(clients=>{
+    populateClients(clients || []);
+    return clients || [];
+  });
+}
+
+function populateClients(clients){
+  const clientSelect = $('clientSelect');
+  clientSelect.innerHTML = '<option value="">-- Pilih / Select --</option>';
+  clients.forEach(client=>{
+    const option=document.createElement('option');
+    option.value=client.clientId;
+    option.textContent=client.companyName;
+    clientSelect.appendChild(option);
+  });
+}
+
+function loadCentresByClient() {
+  const clientId = $('clientSelect').value;
+  const centreSelect = $('weighingCentre');
+
+  centreSelect.innerHTML = '<option value="">-- Pilih / Select --</option>';
+  if (!clientId) return;
+
+  const handle = list => {
+    (list || []).forEach(name => {
+      const option=document.createElement('option');
+      option.value=name;
+      option.textContent=name;
+      centreSelect.appendChild(option);
+    });
+  };
+
+  if(RUNNING_IN_APPS_SCRIPT){
+    google.script.run
+      .withSuccessHandler(handle)
+      .withFailureHandler(err=>console.error('Centre load error:', err))
+      .getWeighingCentres(clientId);
+  }else{
+    apiGet('getWeighingCentres',{clientId})
+      .then(handle)
+      .catch(err=>console.error('Centre load error:', err));
+  }
+}
+
+function setLang(l){
+
+  lang=l;
+
+  document
+    .querySelectorAll('[data-ms]')
+    .forEach(el=>{
+
+      el.textContent=
+        el.dataset[l] ||
+        el.dataset.ms;
+
+    });
+
+}
+
+
+function updateNetwork(){
+
+  const online=
+    navigator.onLine;
+
+  $('netBadge')
+    .textContent=
+    online
+      ? '🟢 ONLINE'
+      : '🔴 OFFLINE';
+
+  $('netBadge')
+    .className=
+    'badge ' +
+    (online
+      ? 'online'
+      : 'offline');
+
+}
+
+
+async function updatePendingCount(){
+
+  const items=
+    await dbGetAll();
+
+  $('pendingBadge')
+    .textContent=
+    'Pending: ' +
+    items.length;
+
+}
+
+
+function toggleOther(){
+
+  $('otherBox')
+    .classList
+    .toggle(
+      'hidden',
+      !$('otherCheck').checked
+    );
+
+  if(
+    !$('otherCheck').checked
+  ){
+
+    $('sensitiveOther')
+      .value='';
+
+  }
+
+}
+
+
+function getGPS(){
+
+  $('gpsStatus')
+    .textContent=
+    lang==='ms'
+      ? '📡 Sedang mendapatkan lokasi GPS...'
+      : '📡 Getting GPS location...';
+
+
+  if(
+    !navigator.geolocation
+  ){
+
+    $('gpsStatus')
+      .textContent=
+      '❌ Geolocation unavailable';
+
+    return;
+
+  }
+
+
+  navigator.geolocation
+    .getCurrentPosition(
+
+      p=>{
+
+        const lat=
+          p.coords.latitude
+          .toFixed(7);
+
+        const lng=
+          p.coords.longitude
+          .toFixed(7);
+
+        const acc=
+          Math.round(
+            p.coords.accuracy || 0
+          );
+
+
+        $('latitude').value=lat;
+
+        $('longitude').value=lng;
+
+        $('gpsAccuracy').value=acc;
+
+
+        $('mapPreview').value=
+
+          'https://www.google.com/maps/search/?api=1&query='
+          + lat
+          + ','
+          + lng;
+
+
+        $('gpsStatus')
+          .textContent=
+
+          (lang==='ms'
+            ? '✅ GPS berjaya. Ketepatan ±'
+            : '✅ GPS acquired. Accuracy ±')
+
+          + acc
+          + ' m';
+
+      },
+
+
+      e=>
+
+        $('gpsStatus')
+          .textContent=
+          '❌ GPS: '
+          + e.message,
+
+
+      {
+
+        enableHighAccuracy:true,
+
+        timeout:30000,
+
+        maximumAge:0
+
+      }
+
+    );
+
+}
+
+
+function openMap(){
+
+  if(
+    $('mapPreview').value
+  ){
+
+    window.open(
+      $('mapPreview').value,
+      '_blank'
+    );
+
+  }
+
+}
+
+
+function photoChanged(){
+
+  selectedFiles=
+    Array.from(
+      $('photos').files || []
+    );
+
+
+  if(
+    selectedFiles.length > 4
+  ){
+
+    alert(
+      lang==='ms'
+        ? 'Maksimum 4 gambar.'
+        : 'Maximum 4 photos.'
+    );
+
+    selectedFiles=
+      selectedFiles.slice(0,4);
+
+    $('photos').value='';
+
+  }
+
+
+  $('photoCount')
+    .textContent=
+    selectedFiles.length
+    + ' / 4';
+
+}
+
+
+function compressImage(file){
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const reader=
+        new FileReader();
+
+
+      reader.onload=()=>{
+
+        const img=
+          new Image();
+
+
+        img.onload=()=>{
+
+          let w=
+            img.width;
+
+          let h=
+            img.height;
+
+          const max=1600;
+
+
+          if(
+            w>max ||
+            h>max
+          ){
+
+            const ratio=
+              Math.min(
+                max/w,
+                max/h
+              );
+
+            w=
+              Math.round(
+                w*ratio
+              );
+
+            h=
+              Math.round(
+                h*ratio
+              );
+
+          }
+
+
+          const canvas=
+            document.createElement(
+              'canvas'
+            );
+
+          canvas.width=w;
+
+          canvas.height=h;
+
+
+          canvas
+            .getContext('2d')
+            .drawImage(
+              img,
+              0,
+              0,
+              w,
+              h
+            );
+
+
+          const dataUrl=
+            canvas.toDataURL(
+              'image/jpeg',
+              0.72
+            );
+
+
+          resolve({
+
+            mimeType:
+              'image/jpeg',
+
+            data:
+              dataUrl
+              .split(',')[1]
+
+          });
+
+        };
+
+
+        img.onerror=
+          reject;
+
+
+        img.src=
+          reader.result;
+
+      };
+
+
+      reader.onerror=
+        reject;
+
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+function makeSyncId(){
+
+  return (
+    'FTP-SYNC-'
+    + Date.now()
+    + '-'
+    + Math.random()
+      .toString(36)
+      .slice(2,10)
+  );
+
+}
+
+
+async function collectPayload(){
+
+  const photos=[];
+
+
+  for(
+    const file of selectedFiles
+  ){
+
+    photos.push(
+      await compressImage(file)
+    );
+
+  }
+
+
+  return {
+
+    syncId:
+      makeSyncId(),
+
+    createdAt:
+      new Date()
+      .toISOString(),
+clientId:
+  $('clientSelect').value,
+    weighingCentre:
+      $('weighingCentre').value,
+
+    farmerName:
+      $('farmerName')
+      .value
+      .trim(),
+
+    phone:
+      $('phone')
+      .value
+      .trim(),
+
+    mpob:
+      $('mpob')
+      .value
+      .trim(),
+
+    farmArea:
+      $('farmArea')
+      .value
+      .trim(),
+
+    cropType:
+      $('cropType')
+      .value
+      .trim(),
+
+    plantingYear:
+      $('plantingYear')
+      .value
+      .trim(),
+
+    plantingCycle:
+      $('plantingCycle')
+      .value
+      .trim(),
+
+    latitude:
+      $('latitude').value,
+
+    longitude:
+      $('longitude').value,
+
+    gpsAccuracy:
+      $('gpsAccuracy').value,
+
+    sensitiveAreas:
+      Array.from(
+        document
+          .querySelectorAll(
+            'input[name=sensitive]:checked'
+          )
+      )
+      .map(
+        x=>x.value
+      ),
+
+    sensitiveOther:
+      $('sensitiveOther')
+      .value
+      .trim(),
+
+    photos:photos,
+
+    officerName:
+      $('officerName')
+      .value
+      .trim(),
+
+    status:
+      $('status').value,
+
+    notes:
+      $('notes')
+      .value
+      .trim()
+
+  };
+
+}
+
+
+function resetFormKeepOfficerCentre(){
+const client=
+  $('clientSelect').value;
+  const centre=
+    $('weighingCentre').value;
+
+  const officer=
+    $('officerName').value;
+
+
+  $('farmForm').reset();
+$('clientSelect')
+  .value=
+  client;
+
+  $('weighingCentre')
+    .value=
+    centre;
+
+  $('officerName')
+    .value=
+    officer;
+
+
+  selectedFiles=[];
+
+
+  $('photoCount')
+    .textContent=
+    '0 / 4';
+
+
+  $('gpsStatus')
+    .textContent='';
+
+
+  toggleOther();
+
+}
+
+
+function newRecord(){
+
+  resetFormKeepOfficerCentre();
+
+  $('saveStatus')
+    .textContent='';
+
+  window.scrollTo({
+
+    top:0,
+
+    behavior:'smooth'
+
+  });
+
+}
+
+
+$('farmForm')
+.addEventListener(
+  'submit',
+  async e=>{
+
+    e.preventDefault();
+
+
+    if(
+      !$('weighingCentre').value
+    ){
+
+      alert(
+        lang==='ms'
+          ? 'Sila pilih Pusat Timbang.'
+          : 'Please select a Weighing Centre.'
+      );
+
+      return;
+
+    }
+
+
+    if(
+      !$('farmerName')
+        .value
+        .trim()
+
+      ||
+
+      !$('farmArea')
+        .value
+        .trim()
+    ){
+
+      alert(
+        lang==='ms'
+          ? 'Nama Pekebun dan Keluasan wajib diisi.'
+          : 'Smallholder Name and Farm Area are required.'
+      );
+
+      return;
+
+    }
+
+
+    $('saveStatus')
+      .textContent=
+
+      lang==='ms'
+        ? '⏳ Menyimpan dalam telefon...'
+        : '⏳ Saving to phone...';
+
+
+    try{
+
+      const payload=
+        await collectPayload();
+
+
+      await dbPut(
+        payload
+      );
+
+
+      await updatePendingCount();
+
+
+      resetFormKeepOfficerCentre();
+
+
+      $('saveStatus')
+        .textContent=
+
+        lang==='ms'
+          ? '✅ Rekod disimpan dalam telefon.'
+          : '✅ Record saved on phone.';
+
+
+      if(
+        navigator.onLine
+      ){
+
+        syncOne(
+          payload.syncId
+        );
+
+      }
+
+    }catch(err){
+
+      $('saveStatus')
+        .textContent=
+        '❌ '
+        + err.message;
+
+    }
+
+  }
+);
+
+
+function sendToServer(payload){
+  if(RUNNING_IN_APPS_SCRIPT){
+    return new Promise((resolve,reject)=>{
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)
+        .submitFarmVerification(payload);
+    });
+  }
+  return apiPost(payload);
+}
+
+
+async function syncOne(syncId){
+
+  const all=
+    await dbGetAll();
+
+  const payload=
+    all.find(
+      x=>x.syncId===syncId
+    );
+
+
+  if(
+    !payload
+  ) return;
+
+
+  try{
+
+    const result=
+      await sendToServer(
+        payload
+      );
+
+
+    if(
+      result &&
+      result.ok
+    ){
+
+      await dbDelete(
+        syncId
+      );
+
+
+      await updatePendingCount();
+
+
+      $('saveStatus')
+        .textContent=
+
+        '✅ Synced: '
+        + result.recordId
+        + ' — '
+        + result.centre;
+
+    }
+
+  }catch(err){
+
+    $('saveStatus')
+      .textContent=
+
+      (
+        lang==='ms'
+          ? '⚠️ Rekod kekal Pending. Sync gagal: '
+          : '⚠️ Record remains Pending. Sync failed: '
+      )
+
+      + (
+        err.message ||
+        err
+      );
+
+  }
+
+}
+
+
+async function syncAll(){
+
+  if(
+    !navigator.onLine
+  ){
+
+    $('saveStatus')
+      .textContent=
+
+      lang==='ms'
+        ? '🔴 Tiada internet. Rekod kekal Pending.'
+        : '🔴 No internet. Records remain Pending.';
+
+    return;
+
+  }
+
+
+  const all=
+    await dbGetAll();
+
+
+  if(
+    !all.length
+  ){
+
+    $('saveStatus')
+      .textContent=
+
+      lang==='ms'
+        ? '✅ Tiada rekod Pending.'
+        : '✅ No Pending records.';
+
+    return;
+
+  }
+
+
+  $('saveStatus')
+    .textContent=
+
+    '🔄 Sync '
+    + all.length
+    + '...';
+
+
+  let success=0;
+
+
+  for(
+    const payload of all
+  ){
+
+    try{
+
+      const result=
+        await sendToServer(
+          payload
+        );
+
+
+      if(
+        result &&
+        result.ok
+      ){
+
+        await dbDelete(
+          payload.syncId
+        );
+
+        success++;
+
+      }
+
+    }catch(err){}
+
+  }
+
+
+  await updatePendingCount();
+
+
+  $('saveStatus')
+    .textContent=
+
+    '✅ Synced '
+    + success
+    + ' / '
+    + all.length;
+
+
+  if(
+    !$('pendingSection')
+      .classList
+      .contains('hidden')
+  ){
+
+    showPending();
+
+  }
+
+}
+
+
+async function showPending(){
+
+  $('pendingSection')
+    .classList
+    .remove('hidden');
+
+
+  const list=
+    $('pendingList');
+
+
+  list.innerHTML='';
+
+
+  const all=
+    await dbGetAll();
+
+
+  if(
+    !all.length
+  ){
+
+    list.textContent=
+
+      lang==='ms'
+        ? 'Tiada rekod Pending.'
+        : 'No Pending records.';
+
+    return;
+
+  }
+
+
+  all
+    .sort(
+      (a,b)=>
+        a.createdAt
+        .localeCompare(
+          b.createdAt
+        )
+    )
+
+    .forEach(p=>{
+
+      const card=
+        document.createElement(
+          'div'
+        );
+
+      card.className=
+        'pending-card';
+
+
+      const title=
+        document.createElement(
+          'b'
+        );
+
+      title.textContent=
+        p.farmerName || '';
+
+
+      const centre=
+        document.createElement(
+          'div'
+        );
+
+      centre.textContent=
+        p.weighingCentre || '';
+
+
+      const time=
+        document.createElement(
+          'div'
+        );
+
+      time.className=
+        'small';
+
+      time.textContent=
+        new Date(
+          p.createdAt
+        )
+        .toLocaleString();
+
+
+      const actions=
+        document.createElement(
+          'div'
+        );
+
+      actions.className=
+        'actions';
+
+
+      const syncBtn=
+        document.createElement(
+          'button'
+        );
+
+      syncBtn.type=
+        'button';
+
+      syncBtn.className=
+        'secondary';
+
+      syncBtn.textContent=
+        'Sync';
+
+      syncBtn.onclick=
+        ()=>syncOne(
+          p.syncId
+        );
+
+
+      const deleteBtn=
+        document.createElement(
+          'button'
+        );
+
+      deleteBtn.type=
+        'button';
+
+      deleteBtn.className=
+        'danger';
+
+      deleteBtn.textContent=
+        'Delete';
+
+      deleteBtn.onclick=
+        ()=>deletePending(
+          p.syncId
+        );
+
+
+      actions.appendChild(
+        syncBtn
+      );
+
+      actions.appendChild(
+        deleteBtn
+      );
+
+
+      card.appendChild(
+        title
+      );
+
+      card.appendChild(
+        document.createElement(
+          'br'
+        )
+      );
+
+      card.appendChild(
+        centre
+      );
+
+      card.appendChild(
+        time
+      );
+
+      card.appendChild(
+        actions
+      );
+
+
+      list.appendChild(
+        card
+      );
+
+    });
+
+}
+
+
+async function deletePending(id){
+
+  if(
+    confirm(
+      lang==='ms'
+        ? 'Padam rekod Pending ini?'
+        : 'Delete this Pending record?'
+    )
+  ){
+
+    await dbDelete(
+      id
+    );
+
+    await updatePendingCount();
+
+    showPending();
+
+  }
+
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(err => console.warn('Service worker registration failed:', err));
+  });
+}
+
+</script>
 
 </body>
 </html>
